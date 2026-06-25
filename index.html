@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -414,7 +413,7 @@ footer {
         <label class="portal-label" for="passwordInput">Portal Password</label>
 
         <div class="portal-controls">
-            <input id="passwordInput" class="portal-input" type="password" placeholder="Enter password" autocomplete="current-password" required>
+            <input id="passwordInput" class="portal-input" type="password" placeholder="Enter password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
             <button class="portal-unlock" type="submit">Unlock Apps</button>
         </div>
 
@@ -423,7 +422,6 @@ footer {
 
     <div id="appsPortal" class="apps-portal" hidden>
         <div class="apps-grid">
-            <a class="app-link" href="https://scheduler-monthly.streamlit.app/" target="_blank" rel="noopener noreferrer">Employee Scheduler</a>
             <a class="app-link" href="https://pidgin-dataset-builder.streamlit.app/" target="_blank" rel="noopener noreferrer">Pidgin Dataset Builder</a>
             <a class="app-link" href="https://inventor-readiness-score.streamlit.app/" target="_blank" rel="noopener noreferrer">Invention Readiness Score</a>
             <a class="app-link" href="https://options1v.streamlit.app/" target="_blank" rel="noopener noreferrer">Options Trading Tool</a>
@@ -441,6 +439,22 @@ footer {
 <script>
 const APP_PORTAL_PASSWORD_HASH = "54fe8b6b72dfe8a27112ff23f083567b203346d39414007b79812417acf4bb39";
 
+function getSessionFlag(key) {
+    try {
+        return sessionStorage.getItem(key);
+    } catch (error) {
+        return null;
+    }
+}
+
+function setSessionFlag(key, value) {
+    try {
+        sessionStorage.setItem(key, value);
+    } catch (error) {
+        // Continue without persisted session state when storage is blocked.
+    }
+}
+
 function toHex(buffer) {
     return Array.from(new Uint8Array(buffer))
         .map((byte) => byte.toString(16).padStart(2, "0"))
@@ -448,6 +462,10 @@ function toHex(buffer) {
 }
 
 async function hashString(value) {
+    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+        throw new Error("Web Crypto is unavailable in this browser context.");
+    }
+
     const encoded = new TextEncoder().encode(value);
     const digest = await crypto.subtle.digest("SHA-256", encoded);
     return toHex(digest);
@@ -474,11 +492,18 @@ async function unlockApps(event) {
         return;
     }
 
-    const enteredHash = await hashString(password);
+    let enteredHash;
+    try {
+        enteredHash = await hashString(password);
+    } catch (error) {
+        showStatus("This browser blocked secure password verification. Please open this page in Safari and try again.", "error");
+        return;
+    }
+
     if (enteredHash === APP_PORTAL_PASSWORD_HASH) {
         appsPortal.hidden = false;
         passwordInput.value = "";
-        sessionStorage.setItem("inventorpathPortalUnlocked", "true");
+        setSessionFlag("inventorpathPortalUnlocked", "true");
         showStatus("Access granted. Apps are now available below.", "success");
     } else {
         appsPortal.hidden = true;
@@ -488,7 +513,7 @@ async function unlockApps(event) {
 
 document.getElementById("portalForm").addEventListener("submit", unlockApps);
 
-if (sessionStorage.getItem("inventorpathPortalUnlocked") === "true") {
+if (getSessionFlag("inventorpathPortalUnlocked") === "true") {
     document.getElementById("appsPortal").hidden = false;
     showStatus("Apps are already unlocked for this session.", "success");
 }
@@ -496,4 +521,3 @@ if (sessionStorage.getItem("inventorpathPortalUnlocked") === "true") {
 
 </body>
 </html>
-```
