@@ -179,86 +179,11 @@ main {
     margin: 0;
 }
 
-.portal-form {
-    margin-top: 18px;
-}
-
-.portal-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 700;
-    color: var(--ink-900);
-}
-
-.portal-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.portal-input {
-    flex: 1 1 260px;
-    min-height: 46px;
-    padding: 10px 14px;
-    border: 1px solid rgba(74, 88, 127, 0.45);
-    border-radius: 10px;
-    background: #ffffff;
-    color: var(--ink-900);
-    font-size: 1rem;
-}
-
-.portal-input:focus-visible {
-    outline: 3px solid var(--sky-500);
-    outline-offset: 1px;
-    border-color: var(--sky-500);
-}
-
-.portal-unlock {
-    min-height: 46px;
-    padding: 10px 18px;
-    border: none;
-    border-radius: 10px;
-    background: var(--ink-900);
-    color: #ffffff;
-    font-family: "Space Grotesk", sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    transition: transform 180ms ease, background-color 180ms ease;
-}
-
-.portal-unlock:hover {
-    transform: translateY(-1px);
-    background: #0b1020;
-}
-
-.portal-unlock:focus-visible {
-    outline: 3px solid var(--sky-500);
-    outline-offset: 2px;
-}
-
-.portal-status {
-    margin-top: 10px;
-    min-height: 1.2rem;
-    font-weight: 600;
-    color: var(--ink-500);
-}
-
-.portal-status.error {
-    color: #b42318;
-}
-
-.portal-status.success {
-    color: #047857;
-}
-
-.apps-portal {
-    margin-top: 24px;
-}
-
 .apps-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
+    margin-top: 18px;
 }
 
 .app-link {
@@ -278,19 +203,6 @@ main {
 
 .app-link:hover {
     transform: translateY(-2px);
-}
-
-.app-link.disabled {
-    color: var(--ink-500);
-    background: #e7ecf3;
-    border: 1px dashed rgba(74, 88, 127, 0.45);
-    pointer-events: none;
-}
-
-.portal-note {
-    margin-top: 12px;
-    font-size: 0.96rem;
-    color: var(--ink-500);
 }
 
 footer {
@@ -406,118 +318,20 @@ footer {
 </section>
 
 <section class="section portal" aria-labelledby="portal-title">
-    <h2 id="portal-title">Private App Portal</h2>
-    <p>Enter password to access InventorPath apps.</p>
+    <h2 id="portal-title">Apps</h2>
+    <p>Open any InventorPath app directly.</p>
 
-    <form id="portalForm" class="portal-form" novalidate>
-        <label class="portal-label" for="passwordInput">Portal Password</label>
-
-        <div class="portal-controls">
-            <input id="passwordInput" class="portal-input" type="password" placeholder="Enter password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
-            <button class="portal-unlock" type="submit">Unlock Apps</button>
-        </div>
-
-        <p id="portalStatus" class="portal-status" aria-live="polite"></p>
-    </form>
-
-    <div id="appsPortal" class="apps-portal" hidden>
-        <div class="apps-grid">
-            <a class="app-link" href="https://pidgin-dataset-builder.streamlit.app/" target="_blank" rel="noopener noreferrer">Pidgin Dataset Builder</a>
-            <a class="app-link" href="https://inventor-readiness-score.streamlit.app/" target="_blank" rel="noopener noreferrer">Invention Readiness Score</a>
-            <a class="app-link" href="https://options1v.streamlit.app/" target="_blank" rel="noopener noreferrer">Options Trading Tool</a>
-        </div>
+    <div class="apps-grid">
+        <a class="app-link" href="https://pidgin-dataset-builder.streamlit.app/" target="_blank" rel="noopener noreferrer">Pidgin Dataset Builder</a>
+        <a class="app-link" href="https://inventor-readiness-score.streamlit.app/" target="_blank" rel="noopener noreferrer">Invention Readiness Score</a>
+        <a class="app-link" href="https://options1v.streamlit.app/" target="_blank" rel="noopener noreferrer">Options Trading Tool</a>
     </div>
-
-    <p class="portal-note">This is a convenience gate on a static page and is not a replacement for server-side authentication.</p>
 </section>
 </main>
 
 <footer>
     © 2026 InventorPath AI
 </footer>
-
-<script>
-const APP_PORTAL_PASSWORD_HASH = "54fe8b6b72dfe8a27112ff23f083567b203346d39414007b79812417acf4bb39";
-
-function getSessionFlag(key) {
-    try {
-        return sessionStorage.getItem(key);
-    } catch (error) {
-        return null;
-    }
-}
-
-function setSessionFlag(key, value) {
-    try {
-        sessionStorage.setItem(key, value);
-    } catch (error) {
-        // Continue without persisted session state when storage is blocked.
-    }
-}
-
-function toHex(buffer) {
-    return Array.from(new Uint8Array(buffer))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("");
-}
-
-async function hashString(value) {
-    if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
-        throw new Error("Web Crypto is unavailable in this browser context.");
-    }
-
-    const encoded = new TextEncoder().encode(value);
-    const digest = await crypto.subtle.digest("SHA-256", encoded);
-    return toHex(digest);
-}
-
-function showStatus(message, tone) {
-    const statusEl = document.getElementById("portalStatus");
-    statusEl.textContent = message;
-    statusEl.classList.remove("error", "success");
-    if (tone) {
-        statusEl.classList.add(tone);
-    }
-}
-
-async function unlockApps(event) {
-    event.preventDefault();
-
-    const passwordInput = document.getElementById("passwordInput");
-    const appsPortal = document.getElementById("appsPortal");
-    const password = passwordInput.value.trim();
-
-    if (!password) {
-        showStatus("Please enter your portal password.", "error");
-        return;
-    }
-
-    let enteredHash;
-    try {
-        enteredHash = await hashString(password);
-    } catch (error) {
-        showStatus("This browser blocked secure password verification. Please open this page in Safari and try again.", "error");
-        return;
-    }
-
-    if (enteredHash === APP_PORTAL_PASSWORD_HASH) {
-        appsPortal.hidden = false;
-        passwordInput.value = "";
-        setSessionFlag("inventorpathPortalUnlocked", "true");
-        showStatus("Access granted. Apps are now available below.", "success");
-    } else {
-        appsPortal.hidden = true;
-        showStatus("Incorrect password. Please try again.", "error");
-    }
-}
-
-document.getElementById("portalForm").addEventListener("submit", unlockApps);
-
-if (getSessionFlag("inventorpathPortalUnlocked") === "true") {
-    document.getElementById("appsPortal").hidden = false;
-    showStatus("Apps are already unlocked for this session.", "success");
-}
-</script>
 
 </body>
 </html>
